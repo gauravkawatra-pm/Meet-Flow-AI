@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeetFlow AI | Meeting to Execution</title>
+  <meta name="description" content="Turn meeting transcripts into decisions, action items, dependencies and risks with MeetFlow AI." />
+  <style>
+    :root {
+      --ink: #172033; --muted: #65718a; --line: #e4e9f2; --bg: #f5f7fb;
+      --blue: #3268f5; --blue-dark: #1d4ed8; --mint: #e9fbf4; --purple: #7256e8;
+      --card: #fff; --shadow: 0 14px 38px rgba(22, 34, 61, .07);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 244px minmax(0,1fr); }
+    aside { background: #101a31; color: #dce5fb; padding: 26px 16px; display: flex; flex-direction: column; gap: 30px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 9px; color: #fff; font-size: 19px; font-weight: 750; letter-spacing: -.4px; }
+    .brand-mark { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg,#6b8cff,#7957e8); color: #fff; font-weight: 900; font-size: 19px; box-shadow: 0 6px 18px #4769d955; }
+    .workspace { color: #8e9cba; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px; margin-bottom: -19px; }
+    nav { display: grid; gap: 7px; }
+    nav button { border: 0; text-align: left; background: transparent; color: #aebbd4; padding: 12px 13px; border-radius: 11px; display: flex; gap: 12px; align-items: center; }
+    nav button.active, nav button:hover { background: #263453; color: #fff; }
+    nav .ico { width: 20px; text-align: center; font-size: 17px; }
+    .side-bottom { margin-top: auto; background: #1b2946; border: 1px solid #2d3b59; padding: 15px; border-radius: 14px; font-size: 12px; color: #aebbd4; }
+    .side-bottom strong { color: #fff; display: block; font-size: 13px; margin-bottom: 5px; }
+    main { min-width: 0; padding: 30px clamp(18px, 4vw, 54px) 55px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .crumb { color: var(--muted); font-size: 13px; } .crumb b { color: var(--ink); }
+    .status { border: 1px solid #ccefe0; background: var(--mint); color: #147a55; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 26px; }
+    .eyebrow { text-transform: uppercase; color: var(--blue); letter-spacing: 1.8px; font-weight: 800; font-size: 11px; margin-bottom: 10px; }
+    h1 { margin: 0; font-size: clamp(29px, 3.3vw, 43px); letter-spacing: -1.5px; line-height: 1.13; }
+    .hero p { max-width: 670px; color: var(--muted); margin: 13px 0 0; font-size: 15px; }
+    .hero-chip { background: #e9edff; color: #4b43bb; border-radius: 13px; padding: 12px 15px; font-size: 12px; font-weight: 750; white-space: nowrap; }
+    .layout { display: grid; grid-template-columns: minmax(0,1.12fr) minmax(320px,.88fr); gap: 20px; align-items: start; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+    .card-head { padding: 21px 23px 17px; border-bottom: 1px solid #edf0f6; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.3px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .step { border-radius: 8px; background: #f0f3ff; color: var(--blue); padding: 5px 8px; font-size: 11px; font-weight: 800; }
+    .form { padding: 22px 23px 24px; }
+    label { display: block; font-size: 12px; color: #46536b; font-weight: 750; margin: 0 0 8px; }
+    input[type="text"], input[type="date"], textarea { width: 100%; border: 1px solid #dce2ee; border-radius: 11px; padding: 12px 13px; color: var(--ink); background: #fff; outline: none; transition: border .15s, box-shadow .15s; }
+    input:focus, textarea:focus { border-color: #86a2ff; box-shadow: 0 0 0 3px #3268f51a; }
+    .field { margin-bottom: 17px; }
+    textarea { min-height: 255px; resize: vertical; line-height: 1.6; }
+    .helper { font-size: 11px; color: #7b879c; margin-top: 7px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 19px; }
+    .primary { border: 0; border-radius: 11px; background: var(--blue); color: #fff; padding: 12px 17px; font-weight: 750; box-shadow: 0 6px 14px #3268f52b; }
+    .primary:hover { background: var(--blue-dark); }
+    .secondary { border: 1px solid #dce2ee; background: white; color: #4d5a72; border-radius: 11px; padding: 11px 14px; font-weight: 700; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .note { color: #748198; font-size: 11px; margin-top: 13px; }
+    .results-body { padding: 21px; }
+    .empty { min-height: 390px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 25px; color: var(--muted); }
+    .empty-icon { margin: 0 auto 13px; width: 55px; height: 55px; border-radius: 18px; background: #edf2ff; display: grid; place-items: center; font-size: 24px; }
+    .empty strong { color: #29364d; display: block; font-size: 15px; margin-bottom: 5px; }
+    .empty p { max-width: 240px; font-size: 12px; margin: 0 auto; }
+    .message { display: none; padding: 11px 13px; border-radius: 10px; margin: 0 0 16px; font-size: 12px; }
+    .message.error { display: block; color: #a12d36; background: #fff0f0; border: 1px solid #ffd4d4; }
+    .message.info { display: block; color: #2852a3; background: #eef4ff; border: 1px solid #d5e3ff; }
+    .message.success { display: block; color: #147a55; background: #e9fbf4; border: 1px solid #ccefe0; }
+    .result-section { margin-bottom: 22px; }
+    .result-section h3 { margin: 0 0 9px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .result-section h3 span { font-size: 15px; }
+    .result-section p, .result-section li { font-size: 12px; color: #4f5d73; }
+    .result-section p { margin: 0; white-space: pre-wrap; }
+    .result-section ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+    .pill { display: inline-block; background: #f0f3f8; color: #5b6680; padding: 3px 7px; border-radius: 6px; font-size: 10px; margin: 2px 3px 2px 0; }
+    .task { border: 1px solid #e6eaf2; border-radius: 11px; padding: 11px 12px; margin-top: 8px; }
+    .task-title { font-size: 12px; font-weight: 750; margin-bottom: 6px; }
+    .task-meta { color: #748198; font-size: 11px; line-height: 1.8; }
+    .task-meta b { color: #4d5a72; }
+    .footer { color: #8a95a8; font-size: 11px; text-align: center; margin-top: 24px; }
+    .hide { display: none !important; }
+    @media (max-width: 980px) { .app { grid-template-columns: 75px minmax(0,1fr); } aside { padding: 22px 10px; align-items: center; } .brand { padding: 0; } .brand-name, .workspace, nav .label, .side-bottom { display: none; } nav { width: 100%; } nav button { justify-content: center; padding: 12px 8px; } .layout { grid-template-columns: 1fr; } .empty { min-height: 220px; } }
+    @media (max-width: 600px) { .app { display: block; } aside { display: none; } main { padding: 20px 13px 35px; } .hero { display: block; } .hero-chip { display: inline-block; margin-top: 16px; } .topbar { margin-bottom: 23px; } .row { grid-template-columns: 1fr; gap: 0; } .card-head, .form { padding-left: 16px; padding-right: 16px; } .results-body { padding: 16px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="brand-mark">M</div><span class="brand-name">MeetFlow AI</span></div>
+    <div class="workspace">WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <button class="active" type="button"><span class="ico">▦</span><span class="label">Meeting Analyzer</span></button>
+      <button type="button" title="Coming soon"><span class="ico">✓</span><span class="label">Action Items</span></button>
+      <button type="button" title="Coming soon"><span class="ico">◷</span><span class="label">Weekly Digests</span></button>
+      <button type="button" title="Coming soon"><span class="ico">⌁</span><span class="label">Decision Memory</span></button>
+    </nav>
+    <div class="side-bottom"><strong>Built for follow-through</strong>Turn conversations into clear owners, deadlines and next steps.</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Workspace <span aria-hidden="true">/</span> <b>Meeting Analyzer</b></div>
+      <div class="status">● AI workflow workspace</div>
+    </div>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Meeting-to-execution agent</div>
+        <h1>Good meetings create<br />clear next steps.</h1>
+        <p>Turn your meeting transcript into decisions, action items and delivery risks — without manually chasing every commitment.</p>
+      </div>
+      <div class="hero-chip">✦ Powered by Gemini + n8n</div>
+    </section>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-head">
+          <div><h2>Analyze a meeting</h2><div class="sub">Paste a transcript to get structured, actionable insights.</div></div>
+          <span class="step">STEP 01</span>
+        </div>
+        <form id="meetingForm" class="form">
+          <div class="row">
+            <div class="field">
+              <label for="meetingTitle">Meeting title</label>
+              <input id="meetingTitle" type="text" placeholder="e.g. Customer data migration" />
+            </div>
+            <div class="field">
+              <label for="meetingDate">Meeting date</label>
+              <input id="meetingDate" type="date" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="transcript">Meeting transcript <span style="color:#e34d59">*</span></label>
+            <textarea id="transcript" required placeholder="Paste your meeting transcript here…&#10;&#10;Example:&#10;Priya: We need to complete the migration by 15 November.&#10;Rahul: I will complete data validation by 10 November.&#10;Ankit: UAT cannot start until the validated dataset is available."></textarea>
+            <div class="helper"><span id="charCount">0</span> characters · Keep names and dates in the transcript where possible.</div>
+          </div>
+          <div class="actions">
+            <button id="analyzeBtn" class="primary" type="submit">✦ Analyze meeting</button>
+            <button id="sampleBtn" class="secondary" type="button">Load sample</button>
+            <button id="clearBtn" class="secondary" type="button">Clear</button>
+          </div>
+          <div class="note">Your transcript is sent to the configured n8n webhook for analysis. Do not submit sensitive or confidential information unless your environment is approved for it.</div>
+        </form>
+      </section>
+
+      <section class="card" aria-live="polite">
+        <div class="card-head">
+          <div><h2>Meeting insights</h2><div class="sub" id="resultSub">Your results will appear here.</div></div>
+          <span class="step">STEP 02</span>
+        </div>
+        <div class="results-body">
+          <div id="message" class="message"></div>
+          <div id="emptyState" class="empty">
+            <div><div class="empty-icon">✧</div><strong>Ready when you are</strong><p>Analyze a transcript to see the summary, decisions, tasks and risks in one place.</p></div>
+          </div>
+          <div id="results" class="hide"></div>
+        </div>
+      </section>
+    </div>
+    <div class="footer">MeetFlow AI · Hackathon MVP · Human review remains important for decisions and commitments.</div>
+  </main>
+</div>
+
+<script>
+  // Paste your n8n PRODUCTION webhook URL here after the workflow is configured and published.
+  // Never put your Gemini API key in this file.
+  const N8N_WEBHOOK_URL = "PASTE_YOUR_N8N_WEBHOOK_URL_HERE";
+
+  const form = document.getElementById("meetingForm");
+  const transcriptInput = document.getElementById("transcript");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const messageBox = document.getElementById("message");
+  const resultsBox = document.getElementById("results");
+  const emptyState = document.getElementById("emptyState");
+  const resultSub = document.getElementById("resultSub");
+  const charCount = document.getElementById("charCount");
+
+  const sampleTranscript = `Priya: We need to complete the customer data migration by 15 November.
+Rahul: I will complete data validation by 10 November.
+Ankit: UAT cannot start until the validated dataset is available.
+Priya: Let's review migration readiness on 12 November.
+Rahul: I may need an additional two days if the source data quality issues are not resolved.
+Ankit: I will prepare the UAT test cases before the readiness review.`;
+
+  document.getElementById("meetingDate").value = new Date().toISOString().slice(0, 10);
+  transcriptInput.addEventListener("input", () => charCount.textContent = transcriptInput.value.length);
+  document.getElementById("sampleBtn").addEventListener("click", () => {
+    document.getElementById("meetingTitle").value = "Customer Data Migration";
+    transcriptInput.value = sampleTranscript;
+    charCount.textContent = transcriptInput.value.length;
+  });
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    form.reset();
+    document.getElementById("meetingDate").value = new Date().toISOString().slice(0, 10);
+    charCount.textContent = "0";
+    messageBox.className = "message";
+    messageBox.textContent = "";
+    resultsBox.classList.add("hide");
+    resultsBox.innerHTML = "";
+    emptyState.classList.remove("hide");
+    resultSub.textContent = "Your results will appear here.";
+  });
+
+  function showMessage(text, type = "info") {
+    messageBox.className = "message " + type;
+    messageBox.textContent = text;
+  }
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+  }
+  function asArray(value) {
+    if (Array.isArray(value)) return value;
+    if (value == null || value === "") return [];
+    return [value];
+  }
+  function getText(data, keys) {
+    for (const key of keys) if (data && data[key] != null) return data[key];
+    return null;
+  }
+  function renderList(items) {
+    const list = asArray(items);
+    if (!list.length) return '<p>None identified.</p>';
+    return '<ul>' + list.map(item => {
+      if (typeof item === "string") return `<li>${escapeHtml(item)}</li>`;
+      if (item && typeof item === "object") {
+        const text = item.description || item.title || item.decision || item.risk || item.question || JSON.stringify(item);
+        return `<li>${escapeHtml(text)}</li>`;
+      }
+      return `<li>${escapeHtml(item)}</li>`;
+    }).join("") + '</ul>';
+  }
+  function renderTasks(tasks) {
+    const list = asArray(tasks);
+    if (!list.length) return '<p>No action items identified.</p>';
+    return list.map((task, i) => {
+      if (typeof task === "string") return `<div class="task"><div class="task-title">${escapeHtml(task)}</div></div>`;
+      const title = task.task || task.action || task.title || task.description || `Action item ${i + 1}`;
+      const owner = task.owner ?? task.assignee ?? null;
+      const due = task.due_date ?? task.deadline ?? task.dueDate ?? null;
+      const status = task.status ?? "Not specified";
+      return `<div class="task"><div class="task-title">${escapeHtml(title)}</div><div class="task-meta"><b>Owner:</b> ${escapeHtml(owner || "Not specified")} &nbsp; · &nbsp; <b>Due:</b> ${escapeHtml(due || "Not specified")}<br><b>Status:</b> ${escapeHtml(status)}</div></div>`;
+    }).join("");
+  }
+  function normalizeResponse(raw) {
+    let data = raw;
+    if (Array.isArray(data) && data.length === 1) data = data[0];
+    if (data && data.body && typeof data.body === "object") data = data.body;
+    if (data && data.output && typeof data.output === "object") data = data.output;
+    if (data && data.text && typeof data.text === "string") {
+      try { data = JSON.parse(data.text); } catch (_) { return { meeting_summary: data.text }; }
+    }
+    if (typeof data === "string") {
+      const cleaned = data.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+      try { data = JSON.parse(cleaned); } catch (_) { return { meeting_summary: data }; }
+    }
+    // Support common n8n Gemini node output shapes.
+    if (data && data.content && Array.isArray(data.content.parts)) {
+      const text = data.content.parts.map(p => p.text || "").join("\n");
+      try { data = JSON.parse(text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
+      catch (_) { data = { meeting_summary: text }; }
+    }
+    if (data && data.candidates && data.candidates[0]?.content?.parts) {
+      const text = data.candidates[0].content.parts.map(p => p.text || "").join("\n");
+      try { data = JSON.parse(text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
+      catch (_) { data = { meeting_summary: text }; }
+    }
+    return data && typeof data === "object" ? data : { meeting_summary: String(data ?? "No analysis returned.") };
+  }
+  function section(title, icon, content, isList = false) {
+    return `<section class="result-section"><h3><span>${icon}</span>${title}</h3>${isList ? renderList(content) : `<p>${escapeHtml(content || "None identified.")}</p>`}</section>`;
+  }
+  function renderResults(raw) {
+    const data = normalizeResponse(raw);
+    const summary = getText(data, ["meeting_summary", "summary", "meetingSummary"]);
+    const decisions = getText(data, ["decisions", "key_decisions"]) || [];
+    const actions = getText(data, ["action_items", "actionItems", "tasks"]) || [];
+    const dependencies = getText(data, ["dependencies"]) || [];
+    const risks = getText(data, ["risks", "risks_and_blockers", "blockers"]) || [];
+    const questions = getText(data, ["unresolved_questions", "open_questions", "unresolvedQuestions"]) || [];
+    resultsBox.innerHTML =
+      section("Meeting summary", "▤", typeof summary === "string" ? summary : JSON.stringify(summary ?? "No summary returned.")) +
+      section("Decisions", "✓", decisions, true) +
+      `<section class="result-section"><h3><span>☷</span>Action items</h3>${renderTasks(actions)}</section>` +
+      section("Dependencies", "↗", dependencies, true) +
+      section("Risks & blockers", "⚠", risks, true) +
+      section("Unresolved questions", "?", questions, true) +
+      `<details style="margin-top:20px"><summary style="cursor:pointer;color:#65718a;font-size:11px">View raw response (debug)</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f6f8fc;padding:12px;border-radius:8px;font-size:10px">${escapeHtml(JSON.stringify(raw, null, 2))}</pre></details>`;
+    emptyState.classList.add("hide");
+    resultsBox.classList.remove("hide");
+    resultSub.textContent = "Analysis received · Review extracted items before acting.";
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const transcript = transcriptInput.value.trim();
+    if (!transcript) { showMessage("Please paste a meeting transcript first.", "error"); transcriptInput.focus(); return; }
+    if (N8N_WEBHOOK_URL === "PASTE_YOUR_N8N_WEBHOOK_URL_HERE" || !N8N_WEBHOOK_URL.trim()) {
+      showMessage("Frontend is ready, but it is not connected yet. Add your n8n Production Webhook URL in the JavaScript configuration at the bottom of index.html.", "info");
+      return;
+    }
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "Analyzing…";
+    messageBox.className = "message";
+    messageBox.textContent = "";
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meeting_title: document.getElementById("meetingTitle").value.trim() || "Untitled meeting",
+          meeting_date: document.getElementById("meetingDate").value || null,
+          transcript
+        })
+      });
+      const responseText = await response.text();
+      if (!response.ok) throw new Error(`n8n returned HTTP ${response.status}. ${responseText.slice(0, 250)}`);
+      let data;
+      try { data = JSON.parse(responseText); } catch (_) { data = responseText; }
+      renderResults(data);
+      showMessage("Meeting analysis completed successfully.", "success");
+    } catch (error) {
+      const detail = error instanceof TypeError
+        ? "The request could not reach n8n. Check that the webhook is published, the URL is correct, and n8n allows requests from this frontend origin (CORS)."
+        : error.message;
+      showMessage(detail, "error");
+    } finally {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = "✦ Analyze meeting";
+    }
+  });
+</script>
+</body>
+</html>
