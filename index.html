@@ -291,16 +291,9 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
     event.preventDefault();
     const transcript = transcriptInput.value.trim();
     if (!transcript) { showMessage("Please paste a meeting transcript first.", "error"); transcriptInput.focus(); return; }
- if (
-  N8N_WEBHOOK_URL === "https://gkmeetflowai.app.n8n.cloud/webhook/meetflow-analyze" ||
-  !N8N_WEBHOOK_URL.trim()
-) {
-  showMessage(
-    "Please configure your n8n Production Webhook URL.",
-    "error"
-  );
-  return;
-}
+
+
+    
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = "Analyzing…";
     messageBox.className = "message";
