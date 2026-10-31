@@ -75,6 +75,14 @@
     .task-title { font-size: 12px; font-weight: 750; margin-bottom: 6px; }
     .task-meta { color: #748198; font-size: 11px; line-height: 1.8; }
     .task-meta b { color: #4d5a72; }
+    .conflict { border: 1px solid #ffd9a8; background: #fff8ee; border-radius: 11px; padding: 11px 12px; margin-top: 8px; }
+    .conflict-title { font-size: 12px; font-weight: 750; margin-bottom: 6px; color: #7a4a00; text-transform: capitalize; }
+    .conflict-meta { font-size: 11px; color: #6b5a3e; line-height: 1.7; }
+    .conflict-meta b { color: #4d3a14; }
+    .sev { display: inline-block; border-radius: 6px; padding: 2px 7px; font-size: 10px; font-weight: 800; margin-left: 8px; }
+    .sev.high { background: #ffe0e0; color: #a12d36; }
+    .sev.medium { background: #ffefcf; color: #8a5a00; }
+    .sev.low { background: #e9f1ff; color: #2852a3; }
     .footer { color: #8a95a8; font-size: 11px; text-align: center; margin-top: 24px; }
     .hide { display: none !important; }
     @media (max-width: 980px) { .app { grid-template-columns: 75px minmax(0,1fr); } aside { padding: 22px 10px; align-items: center; } .brand { padding: 0; } .brand-name, .workspace, nav .label, .side-bottom { display: none; } nav { width: 100%; } nav button { justify-content: center; padding: 12px 8px; } .layout { grid-template-columns: 1fr; } .empty { min-height: 220px; } }
@@ -220,7 +228,9 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
     return '<ul>' + list.map(item => {
       if (typeof item === "string") return `<li>${escapeHtml(item)}</li>`;
       if (item && typeof item === "object") {
-        const text = item.description || item.title || item.decision || item.risk || item.question || JSON.stringify(item);
+        const text = item.description || item.title || item.decision || item.risk || item.question
+          || (item.blocked_item ? `${item.blocked_item} — blocked by ${item.blocked_by}` : null)
+          || JSON.stringify(item);
         return `<li>${escapeHtml(text)}</li>`;
       }
       return `<li>${escapeHtml(item)}</li>`;
@@ -236,6 +246,24 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
       const due = task.due_date ?? task.deadline ?? task.dueDate ?? null;
       const status = task.status ?? "Not specified";
       return `<div class="task"><div class="task-title">${escapeHtml(title)}</div><div class="task-meta"><b>Owner:</b> ${escapeHtml(owner || "Not specified")} &nbsp; · &nbsp; <b>Due:</b> ${escapeHtml(due || "Not specified")}<br><b>Status:</b> ${escapeHtml(status)}</div></div>`;
+    }).join("");
+  }
+  function renderConflicts(conflicts) {
+    const list = asArray(conflicts);
+    if (!list.length) return '<p>No conflicts with earlier decisions detected.</p>';
+    return list.map(c => {
+      if (typeof c === "string") return `<div class="conflict"><div class="conflict-title">${escapeHtml(c)}</div></div>`;
+      const sev = String(c.severity || "").toLowerCase();
+      const type = String(c.conflict_type || "conflict").replace(/_/g, " ");
+      return `<div class="conflict">
+        <div class="conflict-title">${escapeHtml(type)}${sev ? `<span class="sev ${escapeHtml(sev)}">${escapeHtml(c.severity)}</span>` : ""}</div>
+        <div class="conflict-meta">
+          <b>This meeting:</b> ${escapeHtml(c.new_statement || "Not specified")}<br>
+          <b>Earlier decision:</b> ${escapeHtml(c.earlier_description || "Not specified")}${c.conflicts_with_memory_id ? ` <span class="pill">memory #${escapeHtml(c.conflicts_with_memory_id)}</span>` : ""}<br>
+          <b>Why:</b> ${escapeHtml(c.explanation || "Not specified")}<br>
+          ${c.evidence ? `<b>Evidence:</b> “${escapeHtml(c.evidence)}”` : ""}
+        </div>
+      </div>`;
     }).join("");
   }
   function normalizeResponse(raw) {
@@ -269,13 +297,15 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
   function renderResults(raw) {
     const data = normalizeResponse(raw);
     const summary = getText(data, ["meeting_summary", "summary", "meetingSummary"]);
+    const conflicts = getText(data, ["conflicts", "conflict_detection"]) || [];
     const decisions = getText(data, ["decisions", "key_decisions"]) || [];
     const actions = getText(data, ["action_items", "actionItems", "tasks"]) || [];
-    const dependencies = getText(data, ["dependencies"]) || [];
+    const dependencies = getText(data, ["dependencies", "blocked_items"]) || [];
     const risks = getText(data, ["risks", "risks_and_blockers", "blockers"]) || [];
     const questions = getText(data, ["unresolved_questions", "open_questions", "unresolvedQuestions"]) || [];
     resultsBox.innerHTML =
       section("Meeting summary", "▤", typeof summary === "string" ? summary : JSON.stringify(summary ?? "No summary returned.")) +
+      `<section class="result-section"><h3><span>⚡</span>Conflicts with earlier decisions</h3>${renderConflicts(conflicts)}</section>` +
       section("Decisions", "✓", decisions, true) +
       `<section class="result-section"><h3><span>☷</span>Action items</h3>${renderTasks(actions)}</section>` +
       section("Dependencies", "↗", dependencies, true) +
@@ -292,8 +322,6 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
     const transcript = transcriptInput.value.trim();
     if (!transcript) { showMessage("Please paste a meeting transcript first.", "error"); transcriptInput.focus(); return; }
 
-
-    
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = "Analyzing…";
     messageBox.className = "message";
