@@ -114,7 +114,7 @@
         <h1>Good meetings create<br />clear next steps.</h1>
         <p>Turn your meeting transcript into decisions, action items and delivery risks — without manually chasing every commitment.</p>
       </div>
-      <div class="hero-chip">✦ Powered by Gemini + n8n</div>
+      <div class="hero-chip">✦ Powered by Open AI + n8n</div>
     </section>
 
     <div class="layout">
@@ -168,7 +168,7 @@
 
 <script>
   // Paste your n8n PRODUCTION webhook URL here after the workflow is configured and published.
-  // Never put your Gemini API key in this file.
+  // Never put your OPen ai API key in this file.
   const N8N_WEBHOOK_URL = "https://gkmeetflowai.app.n8n.cloud/webhook/meetflow-analyze";
 
   const form = document.getElementById("meetingForm");
@@ -278,7 +278,7 @@ Ankit: I will prepare the UAT test cases before the readiness review.`;
       const cleaned = data.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
       try { data = JSON.parse(cleaned); } catch (_) { return { meeting_summary: data }; }
     }
-    // Support common n8n Gemini node output shapes.
+    // Support common n8n Open ai node output shapes.
     if (data && data.content && Array.isArray(data.content.parts)) {
       const text = data.content.parts.map(p => p.text || "").join("\n");
       try { data = JSON.parse(text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); }
